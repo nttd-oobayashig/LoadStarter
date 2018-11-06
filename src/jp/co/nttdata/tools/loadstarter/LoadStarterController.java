@@ -6,6 +6,8 @@ import java.net.URL;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -13,37 +15,59 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.cell.ComboBoxTableCell;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
+import jp.co.nttdata.tools.loadstarter.LoadStarterController.Config.Scope;
 
 public class LoadStarterController implements Initializable {
 
-	@FXML
-	private TextField scenarioFild;
+    @FXML
+    private TextField scenarioFild;
 
-	@FXML
-	private Button scenarioBtn;
+    @FXML
+    private Button scenarioBtn;
 
-	@FXML
-	private TextField logHomeField;
+    @FXML
+    private TextField logHomeField;
 
-	@FXML
-	private Button logHomeBtn;
+    @FXML
+    private Button logHomeBtn;
 
-	@FXML
-	private TextField testNameFiled;
+    @FXML
+    private TextField testNameFiled;
 
-	@FXML
-	private TextField durationField;
+    @FXML
+    private TextField durationField;
 
-	@FXML
-	private TextField rumpupField;
+    @FXML
+    private TextField rumpupField;
 
-	@FXML
-	private Button startBtn;
+    @FXML
+    private Button startBtn;
+
+    @FXML
+    private CheckBox confCheckBox;
+
+    @FXML
+    private TableView<Config> table;
+    @FXML
+
+    private TableColumn<Config, String> nameColumn;
+
+    @FXML
+    private TableColumn<Config, String> valueColumn;
+
+    @FXML
+    private TableColumn<Config, Scope> scopeColumn;
 
 	@FXML
 	void onLogDirBtnAction(ActionEvent event) {
@@ -97,10 +121,10 @@ public class LoadStarterController implements Initializable {
 			alert.getDialogPane().setContentText( "This field is only input integers." );
 			alert.showAndWait();
 		}
-		
-		
-		
-		
+
+
+
+
 	}
 
 	@Override
@@ -144,5 +168,92 @@ public class LoadStarterController implements Initializable {
 			System.err.println("TOOL_PATH is not found in properties.");
 		}
 
+		this.initTable();
+
 	}
+
+
+	private void initTable() {
+		this.nameColumn.setCellValueFactory(new PropertyValueFactory<Config, String>("name"));
+		this.nameColumn.setCellFactory(TextFieldTableCell.forTableColumn());
+		this.nameColumn.setOnEditCommit(edit -> {
+			edit.getRowValue().setName(edit.getNewValue());
+		});
+
+		this.valueColumn.setCellValueFactory(new PropertyValueFactory<Config, String>("value"));
+		this.valueColumn.setCellFactory(TextFieldTableCell.forTableColumn());
+		this.valueColumn.setOnEditCommit(edit -> {
+			edit.getRowValue().setValue(edit.getNewValue());
+		});
+
+		this.scopeColumn.setCellValueFactory(new PropertyValueFactory<Config,Scope>("scope"));
+		this.scopeColumn.setCellFactory(ComboBoxTableCell.forTableColumn(Scope.values()));
+
+		this.scopeColumn.setOnEditCommit(edit -> {
+			edit.getRowValue().setScope(edit.getNewValue());
+		});
+
+		this.table.setEditable(true);
+		this.nameColumn.setEditable(true);
+		this.valueColumn.setEditable(true);
+		this.scopeColumn.setEditable(true);
+		this.table.getItems().add(new Config("","",Scope.global));
+
+	}
+
+
+	public static class Config {
+		private final SimpleStringProperty  name;
+		private final SimpleStringProperty  value;
+		private final SimpleStringProperty  scope;
+		public enum Scope{
+			global,
+			local
+		}
+
+		private Config(String name,String value,Scope scope) {
+			this.name = new SimpleStringProperty(name);
+			this.value = new SimpleStringProperty(value);
+			this.scope = new SimpleStringProperty(scope.name());
+		}
+
+		public String getName() {
+			return name.get();
+		}
+		public void setName(String name) {
+			this.name.set(name);
+		}
+		public String getValue() {
+			return value.get();
+		}
+		public void setValue(String value) {
+			this.value.set(value);
+		}
+		public void setScope(Scope scope) {
+			this.scope.set(scope.name());
+		}
+		public String getScope() {
+			return scope.get();
+		}
+
+		@SuppressWarnings("exports")
+		public StringProperty nameProperty() {
+			return name;
+		}
+
+		@SuppressWarnings("exports")
+		public StringProperty valueProperty() {
+			return value;
+		}
+
+		@SuppressWarnings("exports")
+		public StringProperty scopeProperty() {
+			return scope;
+		}
+
+
+	}
+
 }
+
+
