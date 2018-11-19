@@ -3,6 +3,8 @@ package jp.co.nttdata.tools.loadstarter;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
@@ -22,7 +24,9 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
+import javafx.scene.input.Clipboard;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
@@ -30,44 +34,53 @@ import jp.co.nttdata.tools.loadstarter.LoadStarterController.Config.Scope;
 
 public class LoadStarterController implements Initializable {
 
-    @FXML
-    private TextField scenarioFild;
+	@FXML
+	private TextField scenarioFild;
 
-    @FXML
-    private Button scenarioBtn;
+	@FXML
+	private Button scenarioBtn;
 
-    @FXML
-    private TextField logHomeField;
+	@FXML
+	private TextField logHomeField;
 
-    @FXML
-    private Button logHomeBtn;
+	@FXML
+	private Button logHomeBtn;
 
-    @FXML
-    private TextField testNameFiled;
+	@FXML
+	private TextField testNameFiled;
 
-    @FXML
-    private TextField durationField;
+	@FXML
+	private TextField durationField;
 
-    @FXML
-    private TextField rumpupField;
+	@FXML
+	private TextField rumpupField;
 
-    @FXML
-    private Button startBtn;
+	@FXML
+	private Button startBtn;
 
-    @FXML
-    private CheckBox confCheckBox;
+	@FXML
+	private CheckBox confCheckBox;
 
-    @FXML
-    private TableView<Config> table;
-    @FXML
+	@FXML
+	private Button addRowBtn;
 
-    private TableColumn<Config, String> nameColumn;
+	@FXML
+	private Button delRowBtn;
 
-    @FXML
-    private TableColumn<Config, String> valueColumn;
+	@FXML
+	private Button pasteBtn;
 
-    @FXML
-    private TableColumn<Config, Scope> scopeColumn;
+	@FXML
+	private TableView<Config> table;
+	@FXML
+
+	private TableColumn<Config, String> nameColumn;
+
+	@FXML
+	private TableColumn<Config, String> valueColumn;
+
+	@FXML
+	private TableColumn<Config, Scope> scopeColumn;
 
 	@FXML
 	void onLogDirBtnAction(ActionEvent event) {
@@ -102,7 +115,7 @@ public class LoadStarterController implements Initializable {
 	}
 
 	@FXML
-	void onStartAction(ActionEvent event) {
+	void onStartBtnAction(ActionEvent event) {
 		System.out.println("Start Bottun");
 		if(this.testNameFiled.getText().isBlank()) {
 			Alert alert = new Alert(AlertType.ERROR,"", ButtonType.OK);
@@ -125,6 +138,64 @@ public class LoadStarterController implements Initializable {
 
 
 
+	}
+
+	@FXML
+	void onCellClick(MouseEvent event) {
+		System.out.println("Click");
+	}
+
+	@FXML
+	void onPasteBtnAction(ActionEvent event) {
+		Clipboard cb = Clipboard.getSystemClipboard();
+
+		if(cb.getString()==null||!cb.hasString()) {
+			return;
+		}
+
+		List<Config> list = new ArrayList<Config>();
+
+		String[] cbLines = cb.getString().split("\n");
+
+		for(int i=0;i<cbLines.length;i++) {
+			String[] data = cbLines[i].split("\t");
+
+			if(data.length!=3) {
+				System.err.println("Clipboard String does not match the format.");
+				list = null;
+				return;
+			}
+
+			String scopeStr = data[2].trim();
+
+			Scope scope;
+			if(scopeStr.equals("global")) {
+				scope = Scope.global;
+			}else if(scopeStr.equals("local")) {
+				scope = Scope.local;
+			}else {
+				System.err.println("the thard col must be Scope(global or local). ["+scopeStr+"]");
+				list = null;
+				return;
+			}
+			list.add(new Config(data[0].trim(),data[1].trim(),scope));
+		}
+
+		for(Config c : list) {
+			this.table.getItems().add(c);
+		}
+
+
+	}
+
+	@FXML
+	void onAddRowBtnAction(ActionEvent event) {
+		this.table.getItems().add(new Config("","",Scope.global));
+	}
+
+	@FXML
+	void onDelRowBtiAction(ActionEvent event) {
+		this.table.getItems().remove(table.getSelectionModel().getSelectedItem());
 	}
 
 	@Override
@@ -193,12 +264,24 @@ public class LoadStarterController implements Initializable {
 			edit.getRowValue().setScope(edit.getNewValue());
 		});
 
+		/*
+		this.table.getColumns().addListener(new ListChangeListener<Config>() {
+			public boolean suspended;
+
+			@Override
+			public void onChanged(Change change) {
+				change.next();
+
+
+			}
+
+		});*/
+
+
 		this.table.setEditable(true);
 		this.nameColumn.setEditable(true);
 		this.valueColumn.setEditable(true);
 		this.scopeColumn.setEditable(true);
-		this.table.getItems().add(new Config("","",Scope.global));
-
 	}
 
 
